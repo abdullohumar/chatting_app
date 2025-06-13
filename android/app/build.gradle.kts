@@ -1,5 +1,8 @@
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
@@ -24,7 +27,8 @@ android {
         applicationId = "com.example.chatting_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        minSdk = 23
+        multiDexEnable = true
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,4 +45,10 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+   implementation "androidx.multidex:multidex:2.0.1"
+ 
+   implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.0"))
 }
