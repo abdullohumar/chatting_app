@@ -1,5 +1,8 @@
+import 'package:chatting_app/provider/firebase_auth_provider.dart';
+import 'package:chatting_app/static/firebase_auth_status.dart';
 import 'package:chatting_app/widgets/textfield_obsecure_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -48,9 +51,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
               hintText: 'Password',
             ),
             const SizedBox(height: 24.0),
-            FilledButton(
-              onPressed: () => _tapToRegister(),
-              child: const Text('Register'),
+            Consumer<FirebaseAuthProvider>(
+              builder: (context, value, child) {
+                return switch (value.authStatus) {
+                  FirebaseAuthStatus.creatingAccount => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  _ => FilledButton(
+                    onPressed: () => _tapToRegister(),
+                    child: const Text('Register'),
+                  ),
+                };
+              },
             ),
             const SizedBox.square(dimension: 16),
             GestureDetector(
@@ -66,7 +78,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  void _tapToRegister() async {}
+  void _tapToRegister() async {
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    if (email.isNotEmpty && password.isNotEmpty) {
+      final firebaseAuthProvider = context.read<FirebaseAuthProvider>();
+      final navigator = Navigator.of(context);
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+      await firebaseAuthProvider.createAccount(email, password);
+      switch (firebaseAuthProvider.authStatus) {
+        case FirebaseAuthStatus.accountCreated:
+          navigator.pop();
+        case _:
+          scaffoldMessenger.showSnackBar(
+            SnackBar(content: Text(firebaseAuthProvider.message ?? "")),
+          );
+      }
+    } else {
+      const message = "Please fill in all fields.";
+      final scaffoldMessenger = ScaffoldMessenger.of(context);
+      scaffoldMessenger.showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
 
   void _goToLogin() {
     Navigator.pop(context);
