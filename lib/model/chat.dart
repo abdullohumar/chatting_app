@@ -12,7 +12,7 @@ class Chat {
   factory Chat.fromJson(Map<String, dynamic> map) {
     return Chat(
       text: map['text'] as String,
-      emailSender: map['emailSender'] as String,
+      emailSender: map['sender'] as String,
       dateCreated: (map['dateCreated']).toDate(),
     );
   }

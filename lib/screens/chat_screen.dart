@@ -1,7 +1,11 @@
+import 'package:chatting_app/model/chat.dart';
+import 'package:chatting_app/model/profile.dart';
 import 'package:chatting_app/provider/firebase_auth_provider.dart';
 import 'package:chatting_app/provider/shared_preference_provider.dart';
+import 'package:chatting_app/services/firebase_firestore_service.dart';
 import 'package:chatting_app/static/firebase_auth_status.dart';
 import 'package:chatting_app/static/screen_route.dart';
+import 'package:chatting_app/widgets/message_bubble_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,6 +19,14 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _contentController = TextEditingController();
   final _padding = const EdgeInsets.symmetric(vertical: 4, horizontal: 8);
+  late final Profile? profile;
+
+  @override
+  void initState() {
+    super.initState();
+
+    profile = context.read<FirebaseAuthProvider>().profile;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +54,34 @@ class _ChatScreenState extends State<ChatScreen> {
         padding: _padding,
         child: Column(
           children: [
-            const Expanded(child: Placeholder()),
+            Expanded(
+              child: StreamProvider<List<Chat>>(
+                create: (context) =>
+                    context.read<FirebaseFirestoreService>().getMessages(),
+                initialData: const <Chat>[],
+                catchError: (context, error) {
+                  debugPrint("error: $error");
+                  return [];
+                },
+                builder: (context, child) {
+                  final chats = Provider.of<List<Chat>>(context);
+                  return chats.isEmpty
+                      ? const Center(child: Text("Empty List"))
+                      : ListView.builder(
+                          reverse: true,
+                          itemCount: chats.length,
+                          itemBuilder: (context, index) {
+                            final chat = chats[index];
+                            return MessageBubble(
+                              content: chat.text,
+                              sender: chat.emailSender,
+                              isMyChat: chat.emailSender == profile?.email,
+                            );
+                          },
+                        );
+                },
+              ),
+            ),
             const SizedBox(height: 8),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -97,5 +136,14 @@ class _ChatScreenState extends State<ChatScreen> {
         });
   }
 
-  void _sendMessage() async {}
+  void _sendMessage() async {
+    final service = context.read<FirebaseFirestoreService>();
+    final email = profile!.email!;
+    final content = _contentController.text;
+
+    if (content.isNotEmpty) {
+      await service.sendMessage(text: content, emailSender: email);
+      _contentController.clear();
+    }
+  }
 }

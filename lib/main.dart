@@ -5,8 +5,10 @@ import 'package:chatting_app/screens/chat_screen.dart';
 import 'package:chatting_app/screens/login_screen.dart';
 import 'package:chatting_app/screens/register_screen.dart';
 import 'package:chatting_app/services/firebase_auth_service.dart';
+import 'package:chatting_app/services/firebase_firestore_service.dart';
 import 'package:chatting_app/services/shared_preferences_service.dart';
 import 'package:chatting_app/static/screen_route.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +23,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform
   );
   final firebaseAuth= FirebaseAuth.instance;
+  final firebaseFirestore = FirebaseFirestore.instance;
 
   runApp(MultiProvider(
     providers: [
@@ -33,7 +36,10 @@ void main() async {
         ),
       ),
       Provider(create: (context) => FirebaseAuthService(firebaseAuth) ),
-      ChangeNotifierProvider(create: (context) => FirebaseAuthProvider(context.read<FirebaseAuthService>()))
+      ChangeNotifierProvider(create: (context) => FirebaseAuthProvider(context.read<FirebaseAuthService>())),
+      Provider(
+        create: (context) => FirebaseFirestoreService(firebaseFirestore),
+      )
     ],
     child: const MyApp(),
   ));
