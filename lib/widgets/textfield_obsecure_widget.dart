@@ -20,19 +20,40 @@ class TextFieldObscure extends StatelessWidget {
         builder: (context, value, child) {
           final obscureText = value.obscureText;
 
-          return TextField(
-            controller: controller,
-            obscureText: obscureText,
-            decoration: InputDecoration(
-              border: const OutlineInputBorder(),
-              suffixIcon: IconButton(
-                icon:
-                    Icon(obscureText ? Icons.visibility : Icons.visibility_off),
-                onPressed: () {
-                  value.obscureText = !obscureText;
-                },
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: TextField(
+              controller: controller,
+              obscureText: obscureText,
+              style: const TextStyle(fontSize: 16),
+              decoration: InputDecoration(
+                prefixIcon: const Icon(
+                  Icons.lock_outline_rounded,
+                  color: Color(0xFF667eea),
+                ),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    obscureText 
+                        ? Icons.visibility_outlined 
+                        : Icons.visibility_off_outlined,
+                    color: Colors.grey.shade600,
+                  ),
+                  onPressed: () {
+                    value.obscureText = !obscureText;
+                  },
+                ),
+                hintText: hintText ?? 'Password',
+                hintStyle: TextStyle(color: Colors.grey.shade500),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
               ),
-              hintText: hintText ?? 'Password',
             ),
           );
         },

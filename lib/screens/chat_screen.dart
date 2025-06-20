@@ -16,45 +16,106 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
+class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   final _contentController = TextEditingController();
-  final _padding = const EdgeInsets.symmetric(vertical: 4, horizontal: 8);
+  final _padding = const EdgeInsets.symmetric(vertical: 4, horizontal: 16);
   late final Profile? profile;
+  late AnimationController _sendButtonController;
 
   @override
   void initState() {
     super.initState();
-
     profile = context.read<FirebaseAuthProvider>().profile;
+    _sendButtonController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7FAFC),
       appBar: AppBar(
-        title: const Text('Chat Room'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        automaticallyImplyLeading: false,
+        title: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.chat_bubble_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Chat Room',
+                  style: TextStyle(
+                    color: Color(0xFF2D3748),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Online now',
+                  style: TextStyle(
+                    color: Colors.green.shade500,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
         actions: [
           Consumer<FirebaseAuthProvider>(
             builder: (context, value, child) {
               return switch (value.authStatus) {
-                FirebaseAuthStatus.signingOut => const Center(
-                  child: CircularProgressIndicator(),
+                FirebaseAuthStatus.signingOut => Container(
+                  margin: const EdgeInsets.only(right: 16),
+                  width: 24,
+                  height: 24,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Color(0xFF667eea),
+                  ),
                 ),
-                _ => IconButton(
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Logout',
-                  onPressed: () => _tapToSignOut(),
+                _ => Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: Icon(Icons.logout_rounded, color: Colors.red.shade400),
+                    tooltip: 'Logout',
+                    onPressed: () => _tapToSignOut(),
+                  ),
                 ),
               };
             },
           ),
         ],
       ),
-      body: Padding(
-        padding: _padding,
-        child: Column(
-          children: [
-            Expanded(
+      body: Column(
+        children: [
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               child: StreamProvider<List<Chat>>(
                 create: (context) =>
                     context.read<FirebaseFirestoreService>().getMessages(),
@@ -66,9 +127,46 @@ class _ChatScreenState extends State<ChatScreen> {
                 builder: (context, child) {
                   final chats = Provider.of<List<Chat>>(context);
                   return chats.isEmpty
-                      ? const Center(child: Text("Empty List"))
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 40,
+                                  color: Colors.grey.shade400,
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                "No messages yet",
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                "Start a conversation!",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
                       : ListView.builder(
                           reverse: true,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
                           itemCount: chats.length,
                           itemBuilder: (context, index) {
                             final chat = chats[index];
@@ -82,38 +180,98 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
             ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _contentController,
-                    keyboardType: TextInputType.multiline,
-                    minLines: 1,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      contentPadding: _padding,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                DecoratedBox(
-                  decoration: ShapeDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: const CircleBorder(),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.send),
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    onPressed: () => _sendMessage(),
-                  ),
+          ),
+          Container(
+            padding: _padding,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
                 ),
               ],
             ),
-          ],
-        ),
+            child: SafeArea(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey.shade200),
+                      ),
+                      child: TextField(
+                        controller: _contentController,
+                        keyboardType: TextInputType.multiline,
+                        minLines: 1,
+                        maxLines: 4,
+                        style: const TextStyle(fontSize: 16),
+                        decoration: InputDecoration(
+                          hintText: 'Type a message...',
+                          hintStyle: TextStyle(color: Colors.grey.shade500),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                        ),
+                        onChanged: (text) {
+                          if (text.isNotEmpty) {
+                            _sendButtonController.forward();
+                          } else {
+                            _sendButtonController.reverse();
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ScaleTransition(
+                    scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: _sendButtonController,
+                        curve: Curves.elasticOut,
+                      ),
+                    ),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF667eea).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _sendMessage(),
+                          borderRadius: BorderRadius.circular(24),
+                          child: const Icon(
+                            Icons.send_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -131,7 +289,12 @@ class _ChatScreenState extends State<ChatScreen> {
         })
         .whenComplete(() {
           scaffoldMessenger.showSnackBar(
-            SnackBar(content: Text(firebaseAuthProvider.message ?? '')),
+            SnackBar(
+              content: Text(firebaseAuthProvider.message ?? ''),
+              backgroundColor: Colors.green.shade400,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
           );
         });
   }
@@ -144,6 +307,13 @@ class _ChatScreenState extends State<ChatScreen> {
     if (content.isNotEmpty) {
       await service.sendMessage(text: content, emailSender: email);
       _contentController.clear();
+      _sendButtonController.reverse();
     }
+  }
+
+  @override
+  void dispose() {
+    _sendButtonController.dispose();
+    super.dispose();
   }
 }
